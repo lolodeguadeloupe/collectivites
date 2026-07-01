@@ -1,0 +1,20 @@
+services:
+  db:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: diagit
+      POSTGRES_PASSWORD: diagit
+      POSTGRES_DB: diagit
+    ports:
+      - "5434:5432"
+    volumes:
+      - diagit_pg_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U diagit -d diagit"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+volumes:
+  diagit_pg_data:
