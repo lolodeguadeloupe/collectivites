@@ -1,0 +1,137 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// ---- Domain models ---------------------------------------------------------
+
+enum RoleUtilisateur {
+  AGENT
+  ACCOMPAGNANT
+}
+
+enum StatutDiagnostic {
+  EN_COURS
+  TERMINE
+}
+
+enum PrioriteAction {
+  URGENT
+  COURT_TERME
+  MOYEN_TERME
+}
+
+enum EffortAction {
+  FAIBLE
+  MOYEN
+  ELEVE
+}
+
+enum StatutAction {
+  A_FAIRE
+  EN_COURS
+  FAIT
+}
+
+enum TypeCollectivite {
+  MAIRIE
+  COMMUNAUTE_DE_COMMUNES
+  SYNDICAT
+  CCAS
+  AUTRE
+}
+
+model Collectivite {
+  id          String            @id @default(cuid())
+  nom         String
+  type        TypeCollectivite
+  nbAgents    Int?
+  contact     String?
+  creeLe      DateTime          @default(now())
+  majLe       DateTime          @updatedAt
+
+  utilisateurs UtilisateurCollectivite[]
+  diagnostics  Diagnostic[]
+}
+
+model Utilisateur {
+  id              String            @id @default(cuid())
+  email           String            @unique
+  motDePasseHache String
+  role            RoleUtilisateur   @default(AGENT)
+  creeLe          DateTime          @default(now())
+  majLe           DateTime          @updatedAt
+
+  collectivites   UtilisateurCollectivite[]
+}
+
+// Explicit join table so an accompagnant can be linked to N collectivités.
+model UtilisateurCollectivite {
+  utilisateurId  String
+  collectiviteId String
+  ajouteLe       DateTime     @default(now())
+
+  utilisateur    Utilisateur  @relation(fields: [utilisateurId], references: [id], onDelete: Cascade)
+  collectivite   Collectivite @relation(fields: [collectiviteId], references: [id], onDelete: Cascade)
+
+  @@id([utilisateurId, collectiviteId])
+  @@index([collectiviteId])
+}
+
+model Diagnostic {
+  id             String           @id @default(cuid())
+  collectiviteId String
+  statut         StatutDiagnostic @default(EN_COURS)
+  scoreGlobal    Float?           // 0..100, null tant que non terminé
+  bareme         String           // version du barème (ex. "2026.1"), tirée du YAML
+  creeLe         DateTime         @default(now())
+  majLe          DateTime         @updatedAt
+  termineLe      DateTime?
+
+  collectivite   Collectivite     @relation(fields: [collectiviteId], references: [id], onDelete: Cascade)
+  reponses       Reponse[]
+  actions        Action[]
+
+  @@index([collectiviteId])
+}
+
+// A response points at a question by string ID from the YAML barème.
+// We store the raw value + the computed points obtained (denormalized on save
+// so historical reports remain stable even if the barème evolves).
+model Reponse {
+  id             String     @id @default(cuid())
+  diagnosticId   String
+  questionId     String
+  domaine        String     // "D1".."D7" — snapshot from barème
+  valeur         Json       // shape depends on question type
+  pointsObtenus  Float
+  pointsMax      Float
+  repondueLe     DateTime   @default(now())
+
+  diagnostic     Diagnostic @relation(fields: [diagnosticId], references: [id], onDelete: Cascade)
+
+  @@unique([diagnosticId, questionId])
+  @@index([diagnosticId])
+}
+
+model Action {
+  id           String         @id @default(cuid())
+  diagnosticId String
+  libelle      String
+  domaine      String
+  priorite     PrioriteAction
+  effort       EffortAction
+  budgetMin    Int?           // euros
+  budgetMax    Int?
+  ressourceUrl String?        // lien vers guide ANSSI / France Num
+  statut       StatutAction   @default(A_FAIRE)
+  creeLe       DateTime       @default(now())
+
+  diagnostic   Diagnostic     @relation(fields: [diagnosticId], references: [id], onDelete: Cascade)
+
+  @@index([diagnosticId])
+}
