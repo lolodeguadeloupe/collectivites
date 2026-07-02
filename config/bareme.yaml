@@ -1,0 +1,550 @@
+version: "2026.1"
+
+paliers:
+  - { min: 0,  max: 39,  code: "critique",      libelle: "Critique",       couleur: "rouge"  }
+  - { min: 40, max: 59,  code: "fragile",       libelle: "Fragile",        couleur: "orange" }
+  - { min: 60, max: 79,  code: "enProgression", libelle: "En progression", couleur: "jaune"  }
+  - { min: 80, max: 100, code: "solide",        libelle: "Solide",         couleur: "vert"   }
+
+domaines:
+
+  # ---------- D1 — Inventaire et parc matériel ----------
+  - id: "D1"
+    libelle: "Inventaire et parc matériel"
+    poids: 2
+    questions:
+      - id: "D1Q1"
+        libelle: "Combien de postes de travail (ordinateurs) sont utilisés au quotidien ?"
+        aide: "Comptez les postes fixes et portables réellement utilisés par les agents et les élus."
+        type: "choix_unique"
+        pointsMax: 1
+        options:
+          - { valeur: "1_5",   libelle: "1 à 5",    points: 1 }
+          - { valeur: "6_20",  libelle: "6 à 20",   points: 1 }
+          - { valeur: "21_50", libelle: "21 à 50",  points: 1 }
+          - { valeur: "50p",   libelle: "Plus de 50", points: 1 }
+
+      - id: "D1Q2"
+        libelle: "Disposez-vous d'un inventaire à jour du matériel informatique ?"
+        aide: "Un fichier, même simple (tableur), listant les postes, leurs utilisateurs, leurs numéros de série."
+        type: "oui_non"
+        pointsMax: 3
+        options:
+          - { valeur: "oui", libelle: "Oui", points: 3 }
+          - { valeur: "non", libelle: "Non", points: 0 }
+        actions:
+          - si: "non"
+            libelle: "Créer un inventaire des postes (utilisateur, système, âge)"
+            priorite: "COURT_TERME"
+            effort: "FAIBLE"
+
+      - id: "D1Q3"
+        libelle: "Y a-t-il des postes qui utilisent encore Windows 7, Windows 8, ou un système d'exploitation plus ancien ?"
+        aide: "Windows 7 et 8 ne reçoivent plus de correctifs de sécurité et sont une porte d'entrée pour les attaques."
+        type: "oui_non"
+        pointsMax: 5
+        options:
+          - { valeur: "oui", libelle: "Oui", points: 0 }
+          - { valeur: "non", libelle: "Non", points: 5 }
+        alertes:
+          - si: "oui"
+            libelle: "Systèmes d'exploitation en fin de support en production"
+            gravite: "rouge"
+        actions:
+          - si: "oui"
+            libelle: "Remplacer ou migrer les postes en fin de support"
+            priorite: "URGENT"
+            effort: "ELEVE"
+            budgetMin: 500
+            budgetMax: 1500
+            ressourceUrl: "https://cyber.gouv.fr/publications/mettre-en-oeuvre-un-systeme-dexploitation-supporte"
+
+      - id: "D1Q4"
+        libelle: "Les logiciels métier critiques (état civil, urbanisme, comptabilité, paie) sont-ils identifiés et documentés ?"
+        aide: "Une liste, même informelle, indiquant pour chaque logiciel : l'éditeur, la version, le prestataire de support."
+        type: "oui_non"
+        pointsMax: 3
+        options:
+          - { valeur: "oui", libelle: "Oui", points: 3 }
+          - { valeur: "non", libelle: "Non", points: 0 }
+        actions:
+          - si: "non"
+            libelle: "Cartographier les logiciels métier critiques (éditeur, version, contact support)"
+            priorite: "COURT_TERME"
+            effort: "FAIBLE"
+
+      - id: "D1Q5"
+        libelle: "Disposez-vous d'un ou plusieurs serveurs installés dans la mairie ?"
+        aide: "Un serveur physique dans un local, ou une machine virtuelle hébergée localement."
+        type: "oui_non"
+        pointsMax: 1
+        options:
+          - { valeur: "oui", libelle: "Oui", points: 1 }
+          - { valeur: "non", libelle: "Non", points: 1 }
+
+  # ---------- D2 — Sécurité et protection ----------
+  - id: "D2"
+    libelle: "Sécurité et protection"
+    poids: 5
+    questions:
+      - id: "D2Q1"
+        libelle: "Un antivirus (ou EDR) est-il installé sur tous les postes ?"
+        aide: "Windows Defender activé compte. Attention aux postes personnels utilisés pour le travail."
+        type: "oui_non"
+        pointsMax: 5
+        options:
+          - { valeur: "oui", libelle: "Oui", points: 5 }
+          - { valeur: "non", libelle: "Non", points: 0 }
+        alertes:
+          - si: "non"
+            libelle: "Aucun antivirus sur certains postes"
+            gravite: "rouge"
+        actions:
+          - si: "non"
+            libelle: "Activer un antivirus sur tous les postes (Defender minimum)"
+            priorite: "URGENT"
+            effort: "FAIBLE"
+
+      - id: "D2Q2"
+        libelle: "Les mises à jour de sécurité (Windows, logiciels) sont-elles appliquées régulièrement ?"
+        aide: "1 = jamais / je ne sais pas, 4 = automatiquement dès qu'elles sortent."
+        type: "echelle_1_4"
+        pointsMax: 4
+        options:
+          - { valeur: "1", libelle: "Jamais / je ne sais pas", points: 0 }
+          - { valeur: "2", libelle: "Rarement", points: 1 }
+          - { valeur: "3", libelle: "Régulièrement", points: 3 }
+          - { valeur: "4", libelle: "Automatiquement", points: 4 }
+        actions:
+          - si: ["1", "2"]
+            libelle: "Activer les mises à jour automatiques de Windows et des logiciels critiques"
+            priorite: "URGENT"
+            effort: "FAIBLE"
+
+      - id: "D2Q3"
+        libelle: "Une politique de mots de passe robustes est-elle en place (12 caractères minimum, unique par service) ?"
+        aide: "Un gestionnaire de mots de passe (KeePass, Bitwarden) compte comme une politique en place."
+        type: "oui_non"
+        pointsMax: 4
+        options:
+          - { valeur: "oui", libelle: "Oui", points: 4 }
+          - { valeur: "non", libelle: "Non", points: 0 }
+        actions:
+          - si: "non"
+            libelle: "Adopter une politique de mots de passe (12+ caractères, gestionnaire)"
+            priorite: "COURT_TERME"
+            effort: "FAIBLE"
+            ressourceUrl: "https://cyber.gouv.fr/publications/recommandations-relatives-lauthentification-multifacteur-et-aux-mots-de-passe"
+
+      - id: "D2Q4"
+        libelle: "L'authentification à deux facteurs (2FA) est-elle activée pour les comptes sensibles (messagerie, logiciels métier, administration) ?"
+        aide: "SMS, application (Google/Microsoft Authenticator), ou clé de sécurité physique."
+        type: "oui_non"
+        pointsMax: 5
+        options:
+          - { valeur: "oui", libelle: "Oui", points: 5 }
+          - { valeur: "non", libelle: "Non", points: 0 }
+        alertes:
+          - si: "non"
+            libelle: "Aucune authentification à deux facteurs sur les comptes sensibles"
+            gravite: "rouge"
+        actions:
+          - si: "non"
+            libelle: "Activer la 2FA sur la messagerie et les comptes administrateurs"
+            priorite: "URGENT"
+            effort: "FAIBLE"
+
+      - id: "D2Q5"
+        libelle: "Des services de votre mairie sont-ils accessibles depuis Internet ?"
+        aide: "Ex. bureau à distance (RDP), partage de fichiers, caméras. Cochez tout ce qui est exposé publiquement."
+        type: "choix_multiple"
+        pointsMax: 5
+        options:
+          - { valeur: "aucun",    libelle: "Aucun / je ne sais pas", points: 5 }
+          - { valeur: "rdp",      libelle: "Bureau à distance (RDP)", points: 0 }
+          - { valeur: "fichiers", libelle: "Partage de fichiers (SMB)", points: 0 }
+          - { valeur: "cameras",  libelle: "Caméras / vidéosurveillance", points: 1 }
+          - { valeur: "vpn",      libelle: "VPN (accès sécurisé)", points: 4 }
+        alertes:
+          - si: ["rdp", "fichiers"]
+            libelle: "Service exposé sur Internet sans protection (RDP ou SMB)"
+            gravite: "rouge"
+        actions:
+          - si: ["rdp", "fichiers"]
+            libelle: "Fermer les accès directs Internet vers RDP / SMB, passer par un VPN"
+            priorite: "URGENT"
+            effort: "MOYEN"
+
+      - id: "D2Q6"
+        libelle: "Les agents sont-ils sensibilisés au phishing (mails frauduleux) ?"
+        aide: "1 = aucune sensibilisation, 4 = formations régulières + tests internes."
+        type: "echelle_1_4"
+        pointsMax: 3
+        options:
+          - { valeur: "1", libelle: "Aucune sensibilisation", points: 0 }
+          - { valeur: "2", libelle: "Message occasionnel", points: 1 }
+          - { valeur: "3", libelle: "Formation ponctuelle", points: 2 }
+          - { valeur: "4", libelle: "Formation régulière + tests", points: 3 }
+        actions:
+          - si: ["1", "2"]
+            libelle: "Organiser une sensibilisation phishing pour les agents"
+            priorite: "COURT_TERME"
+            effort: "FAIBLE"
+            ressourceUrl: "https://cybermalveillance.gouv.fr"
+
+  # ---------- D3 — Sauvegarde et continuité ----------
+  - id: "D3"
+    libelle: "Sauvegarde et continuité"
+    poids: 5
+    questions:
+      - id: "D3Q1"
+        libelle: "Vos données sont-elles sauvegardées régulièrement ?"
+        aide: "Toute sauvegarde compte : disque externe, NAS, cloud, prestataire."
+        type: "oui_non"
+        pointsMax: 5
+        options:
+          - { valeur: "oui", libelle: "Oui", points: 5 }
+          - { valeur: "non", libelle: "Non", points: 0 }
+        alertes:
+          - si: "non"
+            libelle: "Aucune sauvegarde des données"
+            gravite: "rouge"
+        actions:
+          - si: "non"
+            libelle: "Mettre en place une sauvegarde automatique quotidienne"
+            priorite: "URGENT"
+            effort: "MOYEN"
+            budgetMin: 200
+            budgetMax: 1500
+
+      - id: "D3Q2"
+        libelle: "À quelle fréquence les sauvegardes sont-elles réalisées ?"
+        aide: "Réponse indicative — l'objectif classique est quotidien pour les données actives."
+        type: "choix_unique"
+        pointsMax: 4
+        options:
+          - { valeur: "jamais",     libelle: "Jamais", points: 0 }
+          - { valeur: "mensuel",    libelle: "Une fois par mois", points: 1 }
+          - { valeur: "hebdomadaire", libelle: "Chaque semaine", points: 3 }
+          - { valeur: "quotidien",  libelle: "Chaque jour", points: 4 }
+        actions:
+          - si: ["jamais", "mensuel"]
+            libelle: "Passer les sauvegardes à une fréquence au moins hebdomadaire"
+            priorite: "URGENT"
+            effort: "FAIBLE"
+
+      - id: "D3Q3"
+        libelle: "Au moins une copie de sauvegarde est-elle conservée hors des locaux (externalisée) ?"
+        aide: "Règle 3-2-1 : 3 copies, 2 supports, 1 hors site. Un cloud ou une location distante compte."
+        type: "oui_non"
+        pointsMax: 4
+        options:
+          - { valeur: "oui", libelle: "Oui", points: 4 }
+          - { valeur: "non", libelle: "Non", points: 0 }
+        actions:
+          - si: "non"
+            libelle: "Externaliser au moins une copie des sauvegardes (cloud ou site distant)"
+            priorite: "COURT_TERME"
+            effort: "MOYEN"
+
+      - id: "D3Q4"
+        libelle: "Un test de restauration à partir des sauvegardes a-t-il été réalisé dans les 12 derniers mois ?"
+        aide: "Ce test consiste à récupérer réellement un fichier depuis la sauvegarde pour vérifier qu'elle fonctionne."
+        type: "oui_non"
+        pointsMax: 5
+        options:
+          - { valeur: "oui", libelle: "Oui", points: 5 }
+          - { valeur: "non", libelle: "Non", points: 0 }
+        alertes:
+          - si: "non"
+            libelle: "Aucune restauration testée — la sauvegarde n'a pas de valeur prouvée"
+            gravite: "rouge"
+        actions:
+          - si: "non"
+            libelle: "Tester la restauration d'un fichier à partir de la sauvegarde"
+            priorite: "URGENT"
+            effort: "FAIBLE"
+
+      - id: "D3Q5"
+        libelle: "Existe-t-il un Plan de Reprise ou de Continuité d'Activité (PRA/PCA) documenté ?"
+        aide: "Un document simple décrivant quoi faire en cas d'incident majeur (qui appeler, comment continuer à travailler)."
+        type: "oui_non"
+        pointsMax: 2
+        options:
+          - { valeur: "oui", libelle: "Oui", points: 2 }
+          - { valeur: "non", libelle: "Non", points: 0 }
+        actions:
+          - si: "non"
+            libelle: "Rédiger un PRA/PCA simple (une page suffit pour commencer)"
+            priorite: "MOYEN_TERME"
+            effort: "MOYEN"
+
+  # ---------- D4 — Réseau et infrastructure ----------
+  - id: "D4"
+    libelle: "Réseau et infrastructure"
+    poids: 3
+    questions:
+      - id: "D4Q1"
+        libelle: "Existe-t-il un schéma du réseau (routeurs, switchs, points d'accès) ?"
+        aide: "Un dessin, même à la main, indiquant qui parle à qui."
+        type: "oui_non"
+        pointsMax: 2
+        options:
+          - { valeur: "oui", libelle: "Oui", points: 2 }
+          - { valeur: "non", libelle: "Non", points: 0 }
+        actions:
+          - si: "non"
+            libelle: "Établir un schéma simple du réseau"
+            priorite: "MOYEN_TERME"
+            effort: "FAIBLE"
+
+      - id: "D4Q2"
+        libelle: "Le Wi-Fi public (visiteurs) est-il séparé du réseau administratif ?"
+        aide: "Deux réseaux distincts, chacun avec son propre nom (SSID) et son propre mot de passe."
+        type: "oui_non"
+        pointsMax: 5
+        options:
+          - { valeur: "oui", libelle: "Oui", points: 5 }
+          - { valeur: "non", libelle: "Non", points: 0 }
+        alertes:
+          - si: "non"
+            libelle: "Wi-Fi visiteurs non séparé du réseau administratif"
+            gravite: "rouge"
+        actions:
+          - si: "non"
+            libelle: "Configurer un SSID invité isolé du réseau administratif"
+            priorite: "URGENT"
+            effort: "FAIBLE"
+
+      - id: "D4Q3"
+        libelle: "Disposez-vous d'un pare-feu (box opérateur, boîtier dédié) correctement configuré ?"
+        aide: "1 = aucun ou box par défaut ouverte, 4 = pare-feu dédié avec règles auditées."
+        type: "echelle_1_4"
+        pointsMax: 3
+        options:
+          - { valeur: "1", libelle: "Aucun / paramètres par défaut", points: 0 }
+          - { valeur: "2", libelle: "Basique", points: 1 }
+          - { valeur: "3", libelle: "Correct", points: 2 }
+          - { valeur: "4", libelle: "Dédié et audité", points: 3 }
+        actions:
+          - si: ["1", "2"]
+            libelle: "Faire auditer/configurer un pare-feu par un prestataire"
+            priorite: "COURT_TERME"
+            effort: "MOYEN"
+
+      - id: "D4Q4"
+        libelle: "Disposez-vous d'une solution de secours si votre connexion Internet tombe ?"
+        aide: "Ex : partage 4G d'un téléphone, seconde ligne, box de secours."
+        type: "oui_non"
+        pointsMax: 2
+        options:
+          - { valeur: "oui", libelle: "Oui", points: 2 }
+          - { valeur: "non", libelle: "Non", points: 0 }
+        actions:
+          - si: "non"
+            libelle: "Prévoir une solution de secours Internet (4G, seconde ligne)"
+            priorite: "MOYEN_TERME"
+            effort: "FAIBLE"
+
+  # ---------- D5 — Conformité RGPD et données ----------
+  - id: "D5"
+    libelle: "Conformité RGPD et données"
+    poids: 3
+    questions:
+      - id: "D5Q1"
+        libelle: "Un registre des traitements de données personnelles est-il tenu à jour ?"
+        aide: "Registre obligatoire depuis 2018 (RGPD). Modèle simplifié dispo sur cnil.fr."
+        type: "oui_non"
+        pointsMax: 4
+        options:
+          - { valeur: "oui", libelle: "Oui", points: 4 }
+          - { valeur: "non", libelle: "Non", points: 0 }
+        actions:
+          - si: "non"
+            libelle: "Établir ou mettre à jour le registre des traitements"
+            priorite: "COURT_TERME"
+            effort: "MOYEN"
+            ressourceUrl: "https://www.cnil.fr/fr/RGPD-le-registre-des-activites-de-traitement"
+
+      - id: "D5Q2"
+        libelle: "Un Délégué à la Protection des Données (DPO) a-t-il été désigné (interne ou mutualisé) ?"
+        aide: "Obligation pour toute collectivité. Peut être mutualisé au niveau de l'intercommunalité."
+        type: "oui_non"
+        pointsMax: 3
+        options:
+          - { valeur: "oui", libelle: "Oui", points: 3 }
+          - { valeur: "non", libelle: "Non", points: 0 }
+        actions:
+          - si: "non"
+            libelle: "Désigner un DPO (mutualisation possible via l'intercommunalité)"
+            priorite: "URGENT"
+            effort: "FAIBLE"
+
+      - id: "D5Q3"
+        libelle: "Où sont hébergées les données personnelles gérées par vos logiciels métier ?"
+        aide: "Vérifiez auprès des éditeurs si vous n'êtes pas sûr."
+        type: "choix_unique"
+        pointsMax: 4
+        options:
+          - { valeur: "france",  libelle: "En France", points: 4 }
+          - { valeur: "ue",      libelle: "Dans l'Union européenne", points: 3 }
+          - { valeur: "hors_ue", libelle: "Hors Union européenne", points: 0 }
+          - { valeur: "inconnu", libelle: "Je ne sais pas", points: 0 }
+        alertes:
+          - si: ["hors_ue"]
+            libelle: "Données personnelles hébergées hors Union européenne"
+            gravite: "orange"
+        actions:
+          - si: ["inconnu"]
+            libelle: "Identifier la localisation d'hébergement de chaque logiciel métier"
+            priorite: "COURT_TERME"
+            effort: "FAIBLE"
+          - si: ["hors_ue"]
+            libelle: "Vérifier les garanties de transfert hors UE, envisager un changement de prestataire"
+            priorite: "COURT_TERME"
+            effort: "MOYEN"
+
+      - id: "D5Q4"
+        libelle: "Existe-t-il une procédure de révocation des accès lors du départ d'un agent ?"
+        aide: "Comptes désactivés, badges rendus, mots de passe changés."
+        type: "oui_non"
+        pointsMax: 4
+        options:
+          - { valeur: "oui", libelle: "Oui", points: 4 }
+          - { valeur: "non", libelle: "Non", points: 0 }
+        actions:
+          - si: "non"
+            libelle: "Formaliser une procédure de départ d'agent (checklist des accès à révoquer)"
+            priorite: "COURT_TERME"
+            effort: "FAIBLE"
+
+  # ---------- D6 — Gouvernance et organisation ----------
+  - id: "D6"
+    libelle: "Gouvernance et organisation"
+    poids: 2
+    questions:
+      - id: "D6Q1"
+        libelle: "Une personne référente informatique est-elle clairement identifiée dans la collectivité ?"
+        aide: "Un agent, un élu, ou un prestataire clairement désigné comme point de contact."
+        type: "oui_non"
+        pointsMax: 3
+        options:
+          - { valeur: "oui", libelle: "Oui", points: 3 }
+          - { valeur: "non", libelle: "Non", points: 0 }
+        actions:
+          - si: "non"
+            libelle: "Désigner formellement un référent informatique"
+            priorite: "COURT_TERME"
+            effort: "FAIBLE"
+
+      - id: "D6Q2"
+        libelle: "Disposez-vous d'un contrat de maintenance informatique avec un prestataire ?"
+        aide: "Un contrat écrit avec engagement de délai d'intervention."
+        type: "oui_non"
+        pointsMax: 3
+        options:
+          - { valeur: "oui", libelle: "Oui", points: 3 }
+          - { valeur: "non", libelle: "Non", points: 0 }
+        actions:
+          - si: "non"
+            libelle: "Contractualiser la maintenance informatique"
+            priorite: "MOYEN_TERME"
+            effort: "MOYEN"
+
+      - id: "D6Q3"
+        libelle: "Un budget informatique annuel est-il formalisé ?"
+        aide: "Ligne dédiée dans le budget, permettant d'anticiper renouvellements et projets."
+        type: "oui_non"
+        pointsMax: 2
+        options:
+          - { valeur: "oui", libelle: "Oui", points: 2 }
+          - { valeur: "non", libelle: "Non", points: 0 }
+        actions:
+          - si: "non"
+            libelle: "Créer une ligne budgétaire informatique dédiée"
+            priorite: "MOYEN_TERME"
+            effort: "FAIBLE"
+
+      - id: "D6Q4"
+        libelle: "Existe-t-il une documentation à jour des systèmes (mots de passe admin, contrats, licences) ?"
+        aide: "Un classeur ou un fichier chiffré accessible aux référents."
+        type: "oui_non"
+        pointsMax: 2
+        options:
+          - { valeur: "oui", libelle: "Oui", points: 2 }
+          - { valeur: "non", libelle: "Non", points: 0 }
+        actions:
+          - si: "non"
+            libelle: "Rassembler la documentation (contrats, licences, mots de passe admin)"
+            priorite: "COURT_TERME"
+            effort: "FAIBLE"
+
+  # ---------- D7 — Usages et pratiques des agents ----------
+  - id: "D7"
+    libelle: "Usages et pratiques des agents"
+    poids: 2
+    questions:
+      - id: "D7Q1"
+        libelle: "Les agents ont-ils bénéficié d'une formation à la sécurité informatique dans les 24 derniers mois ?"
+        aide: "Formation courte (1h) ou module en ligne comptent."
+        type: "oui_non"
+        pointsMax: 3
+        options:
+          - { valeur: "oui", libelle: "Oui", points: 3 }
+          - { valeur: "non", libelle: "Non", points: 0 }
+        actions:
+          - si: "non"
+            libelle: "Programmer une formation cybersécurité pour les agents"
+            priorite: "COURT_TERME"
+            effort: "FAIBLE"
+            ressourceUrl: "https://www.cybermalveillance.gouv.fr/tous-nos-contenus/actualites/sensicybermalveillance"
+
+      - id: "D7Q2"
+        libelle: "Les agents utilisent-ils des clés USB personnelles sur les postes de la mairie ?"
+        aide: "Une pratique très risquée : la clé peut apporter des logiciels malveillants."
+        type: "oui_non"
+        pointsMax: 3
+        options:
+          - { valeur: "oui", libelle: "Oui", points: 0 }
+          - { valeur: "non", libelle: "Non", points: 3 }
+        alertes:
+          - si: "oui"
+            libelle: "Utilisation de supports amovibles personnels"
+            gravite: "orange"
+        actions:
+          - si: "oui"
+            libelle: "Interdire ou encadrer l'usage de clés USB personnelles"
+            priorite: "COURT_TERME"
+            effort: "FAIBLE"
+
+      - id: "D7Q3"
+        libelle: "Des outils numériques non validés par la collectivité sont-ils utilisés par les agents (WhatsApp pro, Dropbox perso, etc.) ?"
+        aide: "Ces outils échappent au contrôle et peuvent poser des problèmes RGPD."
+        type: "oui_non"
+        pointsMax: 2
+        options:
+          - { valeur: "oui", libelle: "Oui", points: 0 }
+          - { valeur: "non", libelle: "Non", points: 2 }
+        actions:
+          - si: "oui"
+            libelle: "Recenser les outils utilisés et proposer des alternatives validées"
+            priorite: "COURT_TERME"
+            effort: "MOYEN"
+
+      - id: "D7Q4"
+        libelle: "Plusieurs agents partagent-ils le même compte utilisateur ou le même mot de passe ?"
+        aide: "Chaque agent doit avoir son propre compte pour tracer les actions."
+        type: "oui_non"
+        pointsMax: 4
+        options:
+          - { valeur: "oui", libelle: "Oui", points: 0 }
+          - { valeur: "non", libelle: "Non", points: 4 }
+        alertes:
+          - si: "oui"
+            libelle: "Comptes ou mots de passe partagés entre agents"
+            gravite: "rouge"
+        actions:
+          - si: "oui"
+            libelle: "Créer un compte nominatif par agent"
+            priorite: "URGENT"
+            effort: "FAIBLE"
