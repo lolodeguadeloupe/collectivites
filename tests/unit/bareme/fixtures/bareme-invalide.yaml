@@ -1,0 +1,18 @@
+version: "invalide-1.0"
+paliers:
+  - { min: 0,  max: 39,  code: "critique",     libelle: "Critique",      couleur: "rouge"  }
+  # Trou : palier suivant devrait commencer à 40, pas 50.
+  - { min: 50, max: 100, code: "solide",       libelle: "Solide",        couleur: "vert"   }
+domaines:
+  - id: "D1"
+    libelle: "Domaine"
+    poids: 1
+    questions:
+      - id: "D1Q1"
+        libelle: "Q ?"
+        aide: "A"
+        type: "oui_non"
+        pointsMax: 5
+        options:
+          - { valeur: "oui", libelle: "Oui", points: 10 }  # > pointsMax
+          - { valeur: "non", libelle: "Non", points: 0 }

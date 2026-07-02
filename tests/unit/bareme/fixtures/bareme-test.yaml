@@ -1,0 +1,26 @@
+version: "test-1.0"
+paliers:
+  - { min: 0,  max: 39,  code: "critique",     libelle: "Critique",      couleur: "rouge"  }
+  - { min: 40, max: 59,  code: "fragile",      libelle: "Fragile",       couleur: "orange" }
+  - { min: 60, max: 79,  code: "enProgression",libelle: "En progression",couleur: "jaune"  }
+  - { min: 80, max: 100, code: "solide",       libelle: "Solide",        couleur: "vert"   }
+domaines:
+  - id: "D1"
+    libelle: "Domaine de test"
+    poids: 1
+    questions:
+      - id: "D1Q1"
+        libelle: "Question test ?"
+        aide: "Aide test."
+        type: "oui_non"
+        pointsMax: 5
+        options:
+          - { valeur: "oui", libelle: "Oui", points: 5 }
+          - { valeur: "non", libelle: "Non", points: 0 }
+        alertes:
+          - { si: "non", libelle: "Alerte test", gravite: "rouge" }
+        actions:
+          - si: "non"
+            libelle: "Action test"
+            priorite: "URGENT"
+            effort: "FAIBLE"
