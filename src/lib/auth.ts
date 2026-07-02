@@ -3,12 +3,10 @@ import Credentials from "next-auth/providers/credentials";
 import { prisma } from "@/lib/db";
 import { verifyPassword } from "@/lib/password";
 import { connexionSchema } from "@/lib/validators";
+import { authConfig } from "@/auth.config";
 
 export const { handlers, auth, signIn, signOut } = NextAuth({
-  session: { strategy: "jwt" },
-  pages: {
-    signIn: "/connexion",
-  },
+  ...authConfig,
   providers: [
     Credentials({
       name: "Identifiants",

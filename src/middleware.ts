@@ -1,12 +1,7 @@
-import { auth } from "@/lib/auth";
+import NextAuth from "next-auth";
+import { authConfig } from "@/auth.config";
 
-export default auth((req) => {
-  const isProtected = req.nextUrl.pathname.startsWith("/tableau-de-bord");
-  if (isProtected && !req.auth) {
-    const url = new URL("/connexion", req.nextUrl.origin);
-    return Response.redirect(url);
-  }
-});
+export default NextAuth(authConfig).auth;
 
 export const config = {
   matcher: ["/tableau-de-bord/:path*"],
