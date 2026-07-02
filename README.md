@@ -14,3 +14,41 @@ Outil de diagnostic du système informatique d'une collectivité.
 
 - Unitaires : `npm test`
 - End-to-end : `npm run e2e`
+
+## Déploiement Coolify
+
+L'application est prévue pour un déploiement Coolify auto-hébergé.
+
+### Services
+
+1. **PostgreSQL** — provisionner via l'interface Coolify (base `diagit`, utilisateur `diagit`). Activer les sauvegardes automatiques vers un stockage S3-compatible et **tester la restauration**.
+2. **Application** — projet Coolify de type *Dockerfile* pointant sur ce dépôt.
+   - Build path : `/`
+   - Port exposé : `3000`
+   - Reconstruction automatique à chaque push sur la branche `main`.
+
+### Variables d'environnement à définir dans Coolify
+
+| Variable      | Exemple / source                                              |
+|---------------|---------------------------------------------------------------|
+| `DATABASE_URL`| URL fournie par le service Postgres Coolify                   |
+| `AUTH_SECRET` | Généré avec `openssl rand -base64 32` — **jamais** dans Git   |
+| `AUTH_URL`    | `https://diagit.exemple.fr` (URL publique de l'application)   |
+| `NODE_ENV`    | `production`                                                  |
+
+### HTTPS
+
+Coolify délivre automatiquement un certificat Let's Encrypt via Traefik dès que le domaine est associé au service applicatif.
+
+### Migrations
+
+Le `Dockerfile` définit une cible `migrator` (job à exécution unique) qui applique `prisma migrate deploy`. Sur Coolify, configurer un **pre-deploy hook** ou un service dépendant qui exécute cette cible avant chaque déploiement applicatif :
+
+```bash
+docker run --rm \
+  -e DATABASE_URL=<url> \
+  --target migrator \
+  <image>
+```
+
+Le conteneur applicatif (`target runner`) ne lance que `node server.js` : il reste léger et démarre rapidement, sans exposer la chaîne de migration dans le runtime Edge/Node.
