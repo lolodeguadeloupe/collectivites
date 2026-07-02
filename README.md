@@ -5,7 +5,7 @@ Outil de diagnostic du système informatique d'une collectivité.
 ## Développement local
 
 1. Copier l'exemple d'env : `cp .env.example .env` puis générer un secret : `openssl rand -base64 32` et le placer dans `AUTH_SECRET`.
-2. Démarrer Postgres : `docker compose up -d db`
+2. Démarrer Postgres : `docker compose --profile dev up -d db`
 3. Installer les dépendances : `npm install`
 4. Lancer les migrations : `npx prisma migrate dev`
 5. Lancer l'app : `npm run dev`
@@ -42,13 +42,6 @@ Coolify délivre automatiquement un certificat Let's Encrypt via Traefik dès qu
 
 ### Migrations
 
-Le `Dockerfile` définit une cible `migrator` (job à exécution unique) qui applique `prisma migrate deploy`. Sur Coolify, configurer un **pre-deploy hook** ou un service dépendant qui exécute cette cible avant chaque déploiement applicatif :
-
-```bash
-docker run --rm \
-  -e DATABASE_URL=<url> \
-  --target migrator \
-  <image>
-```
+Le `docker-compose.yml` définit un service `migrate` (cible `migrator` du Dockerfile) qui exécute `prisma migrate deploy`. Le service `app` en dépend via `service_completed_successfully` : Coolify lance `migrate` en premier, et `app` ne démarre qu'une fois les migrations appliquées avec succès.
 
 Le conteneur applicatif (`target runner`) ne lance que `node server.js` : il reste léger et démarre rapidement, sans exposer la chaîne de migration dans le runtime Edge/Node.

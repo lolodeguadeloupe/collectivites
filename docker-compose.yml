@@ -15,34 +15,31 @@ services:
       interval: 5s
       timeout: 5s
       retries: 10
+    profiles: ["dev"]
 
   migrate:
     build:
       context: .
       target: migrator
-    depends_on:
-      db:
-        condition: service_healthy
     environment:
-      DATABASE_URL: postgresql://diagit:diagit@db:5432/diagit?schema=public
-    profiles: ["prod-like"]
+      DATABASE_URL: ${DATABASE_URL}
+    restart: on-failure
+
   app:
     build:
       context: .
       target: runner
     depends_on:
-      db:
-        condition: service_healthy
       migrate:
         condition: service_completed_successfully
     environment:
-      DATABASE_URL: postgresql://diagit:diagit@db:5432/diagit?schema=public
+      DATABASE_URL: ${DATABASE_URL}
       AUTH_SECRET: ${AUTH_SECRET}
-      AUTH_URL: http://localhost:3999
+      AUTH_URL: ${AUTH_URL:-http://localhost:3999}
       NODE_ENV: production
     ports:
       - "3999:3000"
-    profiles: ["prod-like"]
+    restart: unless-stopped
 
 volumes:
   diagit_pg_data:
