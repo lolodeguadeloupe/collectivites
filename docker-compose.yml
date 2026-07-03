@@ -35,10 +35,10 @@ services:
     environment:
       DATABASE_URL: ${DATABASE_URL}
       AUTH_SECRET: ${AUTH_SECRET}
-      AUTH_URL: ${AUTH_URL:-http://localhost:3999}
+      AUTH_URL: ${AUTH_URL:-http://localhost:3000}
       NODE_ENV: production
-    ports:
-      - "3999:3000"
+    expose:
+      - "3000"
     restart: unless-stopped
 
 volumes:

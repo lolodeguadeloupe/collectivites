@@ -16,6 +16,16 @@ RUN npx prisma generate
 ENV NEXT_TELEMETRY_DISABLED=1
 RUN npm run build
 
+# Cible dédiée à l'application des migrations Prisma 7.
+# Prisma 7 nécessite `prisma.config.ts` + la CLI prisma + dotenv au runtime.
+FROM node:20-alpine AS migrator
+WORKDIR /app
+RUN apk add --no-cache openssl
+COPY --from=deps /app/node_modules ./node_modules
+COPY package.json prisma.config.ts ./
+COPY prisma ./prisma
+CMD ["npx", "prisma", "migrate", "deploy"]
+
 # Runner: application Next.js standalone uniquement.
 # Les migrations sont appliquées via le target `migrator` (voir docker-compose).
 FROM node:20-alpine AS runner
@@ -39,13 +49,3 @@ USER nextjs
 EXPOSE 3000
 
 CMD ["node", "server.js"]
-
-# Cible dédiée à l'application des migrations Prisma 7.
-# Prisma 7 nécessite `prisma.config.ts` + la CLI prisma + dotenv au runtime.
-FROM node:20-alpine AS migrator
-WORKDIR /app
-RUN apk add --no-cache openssl
-COPY --from=deps /app/node_modules ./node_modules
-COPY package.json prisma.config.ts ./
-COPY prisma ./prisma
-CMD ["npx", "prisma", "migrate", "deploy"]
