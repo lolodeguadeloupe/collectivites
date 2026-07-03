@@ -22,9 +22,9 @@ L'application est prévue pour un déploiement Coolify auto-hébergé.
 ### Services
 
 1. **PostgreSQL** — provisionner via l'interface Coolify (base `diagit`, utilisateur `diagit`). Activer les sauvegardes automatiques vers un stockage S3-compatible et **tester la restauration**.
-2. **Application** — projet Coolify de type *Dockerfile* pointant sur ce dépôt.
-   - Build path : `/`
-   - Port exposé : `3000`
+2. **Application** — projet Coolify de type *Docker Compose* pointant sur `docker-compose.yml` à la racine du dépôt.
+   - Base directory : `/`
+   - Port exposé : `3000` (atteint via le réseau interne Coolify par Traefik — ne pas publier sur l'hôte)
    - Reconstruction automatique à chaque push sur la branche `main`.
 
 ### Variables d'environnement à définir dans Coolify
