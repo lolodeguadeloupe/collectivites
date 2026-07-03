@@ -5,7 +5,11 @@ WORKDIR /app
 RUN apk add --no-cache libc6-compat openssl
 COPY package.json package-lock.json ./
 COPY prisma ./prisma
-RUN npm ci
+# Force l'installation des devDependencies : @tailwindcss/postcss, prisma,
+# typescript et eslint-config-next sont requis au build. Coolify injecte
+# `ARG NODE_ENV` + `--build-arg NODE_ENV=production`, ce qui fait sauter
+# les devDeps par défaut avec `npm ci`.
+RUN npm ci --include=dev
 
 FROM node:20-alpine AS builder
 WORKDIR /app
