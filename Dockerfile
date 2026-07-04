@@ -22,12 +22,15 @@ RUN npm run build
 
 # Cible dédiée à l'application des migrations Prisma 7.
 # Prisma 7 nécessite `prisma.config.ts` + la CLI prisma + dotenv au runtime.
+# N'installe QUE ces deux packages au lieu de COPY tout node_modules — la
+# copie de la full devDeps tree OOM-killait le build sur l'hôte Coolify
+# (47 GB RAM, 0 swap, 147 conteneurs voisins).
 FROM node:20-alpine AS migrator
 WORKDIR /app
 RUN apk add --no-cache openssl
-COPY --from=deps /app/node_modules ./node_modules
-COPY package.json prisma.config.ts ./
+COPY prisma.config.ts ./
 COPY prisma ./prisma
+RUN npm init -y > /dev/null && npm install --no-save prisma@^7.8.0 dotenv
 CMD ["npx", "prisma", "migrate", "deploy"]
 
 # Runner: application Next.js standalone uniquement.
